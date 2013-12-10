@@ -218,11 +218,40 @@ Definition getLastBoard (bl : list board):board:=
   end.
 
 
+Inductive gameNotOver_prop: board-> Prop:=
+  |cc_gameNotOver_prop: forall b:board, (weHaveBlanksLeft_prop b) /\ (~isWin_prop b) -> gameNotOver_prop b.
+
+Print and.
+
+Theorem GameIsNotOver1: gameNotOver_prop brd2.
+Proof.
+ apply cc_gameNotOver_prop.
+ apply conj.
+ apply cc_weHaveBlanksLeft_prop.
+ auto.
+ unfold not.
+ intros.
+ generalize H.
+simpl.
+ Qed.
+
+
+
 Definition makeMove (bl:list board) (s:piece) (validTurn: hasTurn bl s) (pl: piece_location) 
-              (plb: pieceLocationIsBlank (getLastBoard bl) pl): list board:= 
+              (plb: pieceLocationIsBlank (getLastBoard bl) pl) (gno: ~gameOver_prop (getLastBoard bl)): list board:= 
            cons (restrictedMove (getLastBoard bl) pl plb s) bl.
 
 
+
+
+
+
+
+
+
+
+
+(*Starting Mathew's contributions*)
 
 Definition takeTurn (g : list board) (s : piece) (validTurn : hasTurn g s) : list board :=
   g.
