@@ -211,6 +211,18 @@ Definition hasTurn (g : list board) (s : piece) : Prop :=
     | blnk => eq (length g) 0
   end.
 
+Definition getLastBoard (bl : list board):board:=
+  match bl with 
+  | nil => brd0
+  | cons h t => h
+  end.
+
+
+Definition makeMove (bl:list board) (s:piece) (validTurn: hasTurn bl s) (pl: piece_location) 
+              (plb: pieceLocationIsBlank (getLastBoard bl) pl): list board:= 
+           cons (restrictedMove (getLastBoard bl) pl plb s) bl.
+
+
 
 Definition takeTurn (g : list board) (s : piece) (validTurn : hasTurn g s) : list board :=
   g.
