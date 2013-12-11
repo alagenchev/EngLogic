@@ -217,7 +217,7 @@ Proof.
 (* --------------------------------------------- *)
 
 (* Property: If a piece loaction is blank. *)
-Definition pieceLocationIsBlank (b: board) (p: piece_location) : Prop :=
+Definition pieceLocationIsBlank_prop (b: board) (p: piece_location) : Prop :=
   match p with
   | one   => (p1 b) = blnk
   | two   => (p2 b) = blnk
@@ -231,7 +231,7 @@ Definition pieceLocationIsBlank (b: board) (p: piece_location) : Prop :=
   end.
 
 (* -------------------- TEST ------------------- *)
-Theorem p1_blank: pieceLocationIsBlank brd0 one.
+Theorem p1_blank: pieceLocationIsBlank_prop brd0 one.
 Proof.
 simpl.
 auto.
@@ -239,13 +239,13 @@ Qed.
 (* --------------------------------------------- *)
 
 (* Function: The restrict version of the move function, which can only do legal moves. *)
-Definition restrictedMove (b: board) (p: piece_location) (pl: pieceLocationIsBlank b p) (s: piece) : board :=
+Definition restrictedMove (b: board) (p: piece_location) (pl: pieceLocationIsBlank_prop b p) (s: piece) : board :=
   move b p s.
 
 (* -------------------- TEST ------------------- *)
 Definition bbb:board := restrictedMove brd0 one p1_blank x.
 
-Theorem p2_blank: pieceLocationIsBlank brd0 two.
+Theorem p2_blank: pieceLocationIsBlank_prop brd0 two.
 Proof.
 simpl.
 auto.
@@ -256,11 +256,11 @@ Compute restrictedMove bbb two p2_blank x.
 
 (* Property: If current player is in turn. *)
 (* We have to enforce that X always goes first. *)
-Definition hasTurn (g: list board) (s: piece) : Prop :=
+Definition playerHasTurn_prop (bl: list board) (s: piece) : Prop :=
   match s with
-  | x => odd (length g)
-  | o => even (length g)
-  | blnk => eq (length g) 0
+  | x => odd (length bl)
+  | o => even (length bl)
+  | blnk => eq (length bl) 0
   end.
 
 (* Function: Get the last board element from a list of board. *)
@@ -271,20 +271,65 @@ Definition getLastBoard (bl: list board) : board :=
   end.
 
 (* Function: Make a move. *)
-Definition makeMove (bl: list board) (s: piece) (validTurn: hasTurn bl s) (pl: piece_location) 
-              (plb: pieceLocationIsBlank (getLastBoard bl) pl) : list board := 
-  cons (restrictedMove (getLastBoard bl) pl plb s) bl.
+(* If: 1. Game is not over; 2. Player has turn; 3. Piece location is blank; Then we can make a move. *)
+(* Because pieceLocationIsBlank_prop is given here, we don't need to pass it to move function. *)
+Definition makeMove (bl: list board)
+                    (s: piece)
+                    (pl: piece_location) 
+                    (p1: gameNotOver_prop (getLastBoard bl))
+                    (p2: playerHasTurn_prop bl s)
+                    (p3: pieceLocationIsBlank_prop (getLastBoard bl) pl)
+                    : list board := 
+  cons (move (getLastBoard bl) pl s) bl.
 
 
 (* Function: Take turn. *)
-Definition takeTurn (g: list board) (s: piece) (validTurn: hasTurn g s) : list board :=
+Definition takeTurn (g: list board) (s: piece) (validTurn: playerHasTurn_prop g s) : list board :=
   g.
 
 (* -------------------- TEST ------------------- *)
-Theorem myTurn_1 : hasTurn game_init x.
+Theorem myTurn_1 : playerHasTurn_prop game_init x.
 Proof.
   compute. auto with arith.
 Defined.
 
 Example game_1 : list board := takeTurn game_init x myTurn_1.
+
+(* Test the game. *)
+Definition Game1_0 : list board := cons brd0 nil.
+Compute (getLastBoard Game1_0).
+
+Theorem p1_1: gameNotOver_prop (getLastBoard Game1_0).
+Proof.
+  apply cc_gameNotOver_prop.
+  apply conj.
+  apply cc_weHaveBlanksLeft_prop.
+  auto.
+  apply cc_isNotWin_prop.
+  auto.
+Defined.
+
+Theorem p2_1: playerHasTurn_prop Game1_0 x.
+Proof.
+  compute. auto with arith.
+Defined.
+
+Theorem p3_1: pieceLocationIsBlank_prop (getLastBoard Game1_0) five.
+Proof.
+  simpl.
+  auto.
+Defined.
+
+Definition Game1_1 : list board := makeMove Game1_0 x five p1_1 p2_1 p3_1.
+Compute (getLastBoard Game1_1).
+
+(* So here we can see that once we give the proof of three things:
+ * 1. game is not over; 2. player has turn; 3. piece location is blank;
+ * Then we can make a valid move and create a now board.
+ * 
+ * The problem is:
+ * We have to prove three things before every move.
+ * Can we automatically generate the proof?
+ *)
+
 (* --------------------------------------------- *)
